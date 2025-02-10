@@ -21,6 +21,7 @@ Mutators take a reference to a list as first arg.
 */
 
 #include "word_count.h"
+#include <string.h>
 
 /* Basic utilities */
 
@@ -46,14 +47,29 @@ ssize_t len_words(WordCount *wchead) {
      encountered in the body of
      this function.
   */
-    size_t len = 0;
-    return len;
+  if (!wchead){
+    return 0;
+  }
+
+  WordCount *current = wchead;
+  size_t len = 0;
+  while (current){
+    len ++;
+    current = current->next;
+  }
+  return len;
 }
 
 WordCount *find_word(WordCount *wchead, char *word) {
   /* Return count for word, if it exists */
-  WordCount *wc = NULL;
-  return wc;
+  WordCount *wc = wchead;
+  while (wc){
+    if (strcmp(word, wc->word) == 0){
+      return wc;
+    }
+    wc = wc->next;
+  }
+  return NULL;
 }
 
 int add_word(WordCount **wclist, char *word) {
@@ -61,6 +77,36 @@ int add_word(WordCount **wclist, char *word) {
      Otherwise insert with count 1.
      Returns 0 if no errors are encountered in the body of this function; 1 otherwise.
   */
+ if (wclist == NULL){
+  *wclist = (WordCount *)malloc(sizeof(WordCount));
+  if (*wclist == NULL){
+    return 1;
+  }
+  (*wclist)->next = NULL;
+  (*wclist)->count = 1;
+  (*wclist)->word = word;
+  return 0;
+ }
+
+ WordCount *current = *wclist;
+ while (current){
+  if (strcmp(current->word, word) == 0){
+    current->count ++;
+    return 0;
+  }
+  if (current->next == NULL){
+    WordCount *new_word = (WordCount *)malloc(sizeof(WordCount));
+    if (new_word == NULL){
+      return 1;
+    }
+    new_word->next = NULL;
+    new_word->count = 1;
+    new_word->word = strdup(word);
+    current->next = new_word;
+    return 0;
+  }
+  current = (current)->next;
+ }
  return 0;
 }
 
