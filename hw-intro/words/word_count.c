@@ -48,7 +48,7 @@ ssize_t len_words(WordCount *wchead) {
      this function.
   */
   if (!wchead){
-    return 0;
+    return -1;
   }
 
   WordCount *current = wchead;
