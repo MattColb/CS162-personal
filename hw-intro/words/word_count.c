@@ -38,6 +38,9 @@ int init_words(WordCount **wclist) {
      Returns 0 if no errors are encountered
      in the body of this function; 1 otherwise.
   */
+  if (wclist == NULL){
+    return 1;
+  }
   *wclist = NULL;
   return 0;
 }
@@ -57,14 +60,18 @@ ssize_t len_words(WordCount *wchead) {
     len ++;
     current = current->next;
   }
-  return len;
+  return (ssize_t)len;
 }
 
 WordCount *find_word(WordCount *wchead, char *word) {
+  if (!word){
+    return NULL;
+  }
+
   /* Return count for word, if it exists */
   WordCount *wc = wchead;
   while (wc){
-    if (strcmp(word, wc->word) == 0){
+    if (wc->word && strcmp(word, wc->word) == 0){
       return wc;
     }
     wc = wc->next;
@@ -77,16 +84,26 @@ int add_word(WordCount **wclist, char *word) {
      Otherwise insert with count 1.
      Returns 0 if no errors are encountered in the body of this function; 1 otherwise.
   */
- if (wclist == NULL){
-  *wclist = (WordCount *)malloc(sizeof(WordCount));
-  if (*wclist == NULL){
+  if (wclist == NULL){
     return 1;
   }
-  (*wclist)->next = NULL;
-  (*wclist)->count = 1;
-  (*wclist)->word = word;
-  return 0;
- }
+
+  if (*wclist == NULL) {
+    *wclist = (WordCount *)malloc(sizeof(WordCount));
+    if (*wclist == NULL) {
+        return 1;  // Memory allocation failure
+    }
+    (*wclist)->next = NULL;
+    (*wclist)->count = 1;
+    (*wclist)->word = strdup(word);  // Copy the word to avoid pointer issues
+    if ((*wclist)->word == NULL) {
+        free(*wclist);  // Clean up on failure
+        *wclist = NULL;
+        return 1;
+    }
+    return 0;
+}
+
 
  WordCount *current = *wclist;
  while (current){

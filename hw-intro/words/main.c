@@ -56,11 +56,13 @@ int num_words(FILE* infile) {
 
   while ((ch = fgetc(infile)) != EOF){
     // This may be wrong
-    if (!curr_word && (isalpha(ch) != 0)){
-      if (curr_word){
+    if ((isalpha(ch) != 0)){
+      if (!curr_word){
         num_words++;
+        curr_word = true;
       }
-      curr_word = (isalpha(ch) != 0);
+    }else{
+      curr_word = false;
     }
   }
 
@@ -79,6 +81,43 @@ int num_words(FILE* infile) {
  * and 0 otherwise.
  */
 int count_words(WordCount **wclist, FILE *infile) {
+  if (infile ==NULL){
+    perror("Error opening file");
+    return 1;
+  }
+
+  
+  char word[MAX_WORD_LEN + 1];  // Buffer to store words
+  int word_len = 0;
+  int ch;
+  bool in_word = false;
+
+  while ((ch = fgetc(infile)) != EOF) {
+      if (isalpha(ch)) {  
+          // Convert to lowercase and add to word buffer
+          if (word_len < MAX_WORD_LEN) {
+              word[word_len++] = tolower(ch);
+          }
+          in_word = true;
+      } else if (in_word) {  
+          // Word ended, add to list
+          word[word_len] = '\0';  // Null-terminate
+          if (add_word(wclist, word) != 0) {  // Check for memory errors
+              return 1;
+          }
+          word_len = 0;
+          in_word = false;
+      }
+  }
+
+  // Handle case where file ends with a word (no punctuation)
+  if (in_word && word_len > 0) {
+      word[word_len] = '\0';
+      if (add_word(wclist, word) != 0) {
+          return 1;
+      }
+  }
+
   return 0;
 }
 
@@ -86,9 +125,13 @@ int count_words(WordCount **wclist, FILE *infile) {
  * Comparator to sort list by frequency.
  * Useful function: strcmp().
  */
-static bool wordcount_less(const WordCount *wc1, const WordCount *wc2) {
-  return 0;
-}
+ static bool wordcount_less(const WordCount *wc1, const WordCount *wc2) {
+     if (wc1->count != wc2->count) {
+         return wc1->count < wc2->count;  // Higher count comes first
+     }
+     return strcmp(wc1->word, wc2->word) > 0;  // Sort alphabetically if counts are equal
+ }
+ 
 
 // In trying times, displays a helpful message.
 static int display_help(void) {
@@ -102,30 +145,27 @@ static int display_help(void) {
 /*
  * Handle command line flags and arguments.
  */
-int main (int argc, char *argv[]) {
-
-  // Count Mode (default): outputs the total amount of words counted
+int main(int argc, char *argv[]) {
+  // Default mode: count total words
   bool count_mode = true;
-  int total_words = 0;
-
-  // Freq Mode: outputs the frequency of each word
   bool freq_mode = false;
+  int total_words = 0;
+  WordCount *word_counts = NULL;  // Declare the word count list
 
   FILE *infile = NULL;
 
-  // Variables for command line argument parsing
-  int i;
-  static struct option long_options[] =
-  {
+  // Command-line options
+  int option;
+  static struct option long_options[] = {
       {"count", no_argument, 0, 'c'},
       {"frequency", no_argument, 0, 'f'},
       {"help", no_argument, 0, 'h'},
       {0, 0, 0, 0}
   };
 
-  // Sets flags
-  while ((i = getopt_long(argc, argv, "cfh", long_options, NULL)) != -1) {
-      switch (i) {
+  // Parse command-line arguments
+  while ((option = getopt_long(argc, argv, "cfh", long_options, NULL)) != -1) {
+      switch (option) {
           case 'c':
               count_mode = true;
               freq_mode = false;
@@ -140,32 +180,47 @@ int main (int argc, char *argv[]) {
   }
 
   if (!count_mode && !freq_mode) {
-    printf("Please specify a mode.\n");
-    return display_help();
+      printf("Please specify a mode.\n");
+      return display_help();
   }
 
-  /* Create the empty data structure */
+  /* Initialize word count structure */
   init_words(&word_counts);
 
-  if ((argc - optind) < 1) {
-    // No input file specified, instead, read from STDIN instead.
-    // printf("HERE");
-    infile = stdin;
+  /* Determine input source (files or STDIN) */
+  if (optind >= argc) {
+      // No files specified, read from STDIN
+      infile = stdin;
+      if (count_mode) {
+          total_words += num_words(infile);
+      } else {
+          count_words(&word_counts, infile);
+      }
   } else {
-    // printf("HERE2");
-    infile = fopen("words.txt", "r");
-    // At least one file specified. Useful functions: fopen(), fclose().
-    // The first file can be found at argv[optind]. The last file can be
-    // found at argv[argc-1].
+      // Process each input file
+      for (int i = optind; i < argc; i++) {
+          infile = fopen(argv[i], "r");
+          if (!infile) {
+              perror("Error opening file");
+              continue;  // Skip file but continue processing others
+          }
+          if (count_mode) {
+              total_words += num_words(infile);
+          } else {
+              count_words(&word_counts, infile);
+          }
+          fclose(infile);
+      }
   }
 
+  /* Output results */
   if (count_mode) {
-    printf("The total number of words is: %i\n", total_words);
+      printf("The total number of words is: %i\n", total_words);
   } else {
-    wordcount_sort(&word_counts, wordcount_less);
+      wordcount_sort(&word_counts, wordcount_less);
+      printf("The frequencies of each word are: \n");
+      fprint_words(word_counts, stdout);
+  }
 
-    printf("The frequencies of each word are: \n");
-    fprint_words(word_counts, stdout);
-}
   return 0;
 }
