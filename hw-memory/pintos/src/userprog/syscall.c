@@ -7,6 +7,8 @@
 #include "threads/vaddr.h"
 #include "filesys/filesys.h"
 #include "filesys/file.h"
+#include "userprog/pagedir.h"
+#include "threads/palloc.h"
 
 static void syscall_handler(struct intr_frame*);
 
@@ -76,6 +78,43 @@ static void syscall_close(int fd) {
   }
 }
 
+static void* syscall_sbrk(intptr_t increment) {
+  struct thread* t = thread_current();
+  size_t pages_num = abs(pg_round_up(t->thread_heap_end) - pg_round_up(t->thread_heap_end+increment)) / PGSIZE;
+  if (increment < 0) {
+    for (size_t i=0; i< pages_num; i++) {
+      void* start = pg_round_up(t->thread_heap_end + increment) + i *PGSIZE;
+      void* page = pagedir_get_page(thread_current()->pagedir, start);
+      palloc_free_page(page);
+      pagedir_clear_page(thread_current()->pagedir, start);
+    }
+  }
+  else if (increment > 0) {
+    size_t pages_num_now = 0;
+    bool flag = 0;
+    for (size_t i =0; i< pages_num; i++) {
+      void* page = palloc_get_page(PAL_USER | PAL_ZERO);
+      if (page == NULL) flag=1;
+      else if (!pagedir_set_page(thread_current()->pagedir, pg_round_up(t->thread_heap_end) + i * PGSIZE, page, true)) {
+        palloc_free_page(page);
+        flag = 1;
+      }
+      if (flag) {
+        for (size_t i=0; i<pages_num_now; i++) {
+          void* start = pg_round_up(t->thread_heap_end) + i * PGSIZE;
+          void* page = pagedir_get_page(thread_current()->pagedir, start);
+          palloc_free_page(page);
+          pagedir_clear_page(thread_current()->pagedir, start);
+        }
+        return (void*)-1;
+      }
+      pages_num_now++;
+    }
+  }
+  t->thread_heap_end = t->thread_heap_end + increment;
+  return t->thread_heap_end - increment;
+}
+
 static void syscall_handler(struct intr_frame* f) {
   uint32_t* args = (uint32_t*)f->esp;
   struct thread* t = thread_current();
@@ -109,6 +148,11 @@ static void syscall_handler(struct intr_frame* f) {
     case SYS_CLOSE:
       validate_buffer_in_user_region(&args[1], sizeof(uint32_t));
       syscall_close((int)args[1]);
+      break;
+
+    case SYS_SBRK:
+      validate_buffer_in_user_region(&args[1], sizeof(uint32_t));
+      f->eax = (uint32_t)syscall_sbrk((intptr_t)args[1]);
       break;
 
     default:

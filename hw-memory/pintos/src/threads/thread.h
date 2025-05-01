@@ -102,7 +102,10 @@ struct thread {
 #endif
 
   /* Owned by thread.c. */
+  uint8_t* thread_heap_start;
+  uint8_t* thread_heap_end;
   unsigned magic; /* Detects stack overflow. */
+  
 };
 
 /* If false (default), use round-robin scheduler.
