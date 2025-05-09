@@ -3,3 +3,9 @@ I mainly focused on the individual assignments, while also leveraging existing e
 I generally felt more comfortable in rust than in C, which is mostly why I chose to do assignments in rust where I could, but began to feel more comfortable with C over my time in this course. 
 I also read the 2nd Edition of Thoman Anderson & Michael Dahlin's Operating System Principles & Practice Book and followed along with publicly available lectures posted by John Kubiatowicz on YouTube, which closely followed topics covered in the textbook with more detail where it was necessary.
 
+## Homework:
+- [Homework 0]("hw-intro")
+- [Homework 1]("hw-list")
+- [Homework 0]("hw-intro")
+- [Homework 0]("hw-intro")
+
