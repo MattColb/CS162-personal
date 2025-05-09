@@ -1,0 +1,71 @@
++  /* Initialize exec_info. */
++  exec.parent_work_dir = t->pcb->work_dir;
++  /* Create a new thread to execute FILE_NAME. */
++    if (exec.success)
++    else
++    //set the cwd as the root directory
++    t->pcb->work_dir = exec->parent_work_dir;
++  /* Allocate wait_status. */
++  /* Initialize wait_status. */
++  /* Handle failure with successful wait_status malloc */
++  if (!success && ws_success)
++  /* Notify parent thread and clean up. */
++  if (!success)
++   frees it. */
++  int new_ref_cnt;
++  new_ref_cnt = --cs->ref_cnt;
++  if (new_ref_cnt == 0)
++  for (e = list_begin(&cur->pcb->children); e != list_end(&cur->pcb->children); e = list_next(e)) {
++  uint32_t* pd;
++  /* Close executable (and allow writes). */
++  safe_file_close(cur->pcb->bin_file);
++  /* Free entries of children list. */
++    struct wait_status* cs = list_entry(e, struct wait_status, elem);
++  /* Close all currently open file descriptors */
++  while (!list_empty(&cur->pcb->fds)) {
++    e = list_begin(&cur->pcb->fds);
++  /* Notify parent that we're dead, as the last thing we do. */
++  char file_name[NAME_MAX + 2];
++  char* cp;
++  /* Extract file_name from command line. */
++  while (*cmd_line == ' ')
++  if (cp != NULL)
++  for (; argc > 1; argc -= 2, argv++) {
++    argv[0] = argv[argc - 1];
++    argv[argc - 1] = tmp;
++   On failure, returns a null pointer. */
++  size_t padsize = ROUND_UP(size, sizeof(uint32_t));
++  if (*ofs < padsize)
++  *ofs -= padsize;
++  memcpy(kpage + *ofs + (padsize - size), buf, size);
++  return kpage + *ofs + (padsize - size);
++   to UPAGE in user space.  The command line arguments are taken
++   from CMD_LINE, separated by spaces.  Sets *ESP to the initial
++   stack pointer for the process. */
++  char* cmd_line_copy;
++  /* Push command line string. */
++  cmd_line_copy = push(kpage, &ofs, cmd_line, strlen(cmd_line) + 1);
++  if (cmd_line_copy == NULL)
++  /* Parse command line into arguments */
++  for (karg = strtok_r(cmd_line_copy, " ", &saveptr); karg != NULL;
++       karg = strtok_r(NULL, " ", &saveptr)) {
++  // Insert padding to ensure the stack pointer will ultimately be 16-byte-aligned
++  size_t alignment_adjustment =
++      ((PGSIZE - ofs) + (argc + 1) * sizeof(char*) + sizeof(char**) + sizeof(int)) % 16;
++  ofs -= 16 - alignment_adjustment;
++  // Push sentinel null for argv[argc]
++  if (push(kpage, &ofs, &null, sizeof null) == NULL)
++  // Push command line arguments
++  for (int i = 0; i < argc; i++) {
++  /* Reverse the order of the command line arguments. */
++  argv = (char**)(upage + ofs);
++  reverse(argc, (char**)(kpage + ofs));
++  /* Push argv, argc, "return address". */
++  if (push(kpage, &ofs, &argv, sizeof argv) == NULL ||
++      push(kpage, &ofs, &argc, sizeof argc) == NULL ||
++      push(kpage, &ofs, &null, sizeof null) == NULL)
++  /* Set initial stack pointer. */
++  *esp = upage + ofs;
++   top of user virtual memory.  Fills in the page using CMD_LINE
++   and sets *ESP to the stack pointer. */
++      success = init_cmd_line(kpage, upage, cmd_line, esp);
