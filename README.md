@@ -6,6 +6,9 @@ I also read the 2nd Edition of Thoman Anderson & Michael Dahlin's Operating Syst
 ## Homework:
 - [Homework 0](hw-intro/)
 - [Homework 1](hw-list/)
-- [Homework 0]("hw-intro")
-- [Homework 0]("hw-intro")
-
+- [Homework 2](hw-shell/)
+- [Homework 3](hw-http-rs/)
+- [Homework 4](hw-memory/)
+- [Homework 5](hw-map-reduce-rs/)
+- [Project 0](proj-pregame/)
+- [Project 1-3](projects1-3/)
